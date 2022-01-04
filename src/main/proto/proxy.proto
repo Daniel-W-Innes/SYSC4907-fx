@@ -1,0 +1,20 @@
+syntax = "proto3";
+option go_package = "github.com/Daniel-W-Innes/street_view_proxy/view";
+option java_package = "ca.carleton.sysc4907fx";
+
+message Location {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message Image {
+  int32 width = 1;
+  int32 height = 2;
+  bytes image_data = 3;
+}
+
+service ImageDownloader{
+  rpc GetImage (Location) returns (Image);
+}
+
+
