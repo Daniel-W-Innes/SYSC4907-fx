@@ -34,7 +34,7 @@ public class Application extends javafx.application.Application {
         imageView = new ImageView(image);
         pane.getChildren().add(imageView);
 
-         text = new Text("loading");
+        text = new Text("loading");
         pane.getChildren().add(text);
         pane.setAlignment(Pos.TOP_CENTER);
 
@@ -44,6 +44,9 @@ public class Application extends javafx.application.Application {
         stub = ImageDownloaderGrpc.newBlockingStub(channel);
     }
 
+    public static void main(String[] args) {
+        launch();
+    }
 
     @Override
     public void start(Stage stage) {
@@ -72,9 +75,5 @@ public class Application extends javafx.application.Application {
         text.setText(car.toString());
         Proxy.Image image = stub.getImage(car.getLatLong());
         imageView.setImage(new Image(new ByteArrayInputStream(image.getImageData().toByteArray())));
-    }
-
-    public static void main(String[] args) {
-        launch();
     }
 }

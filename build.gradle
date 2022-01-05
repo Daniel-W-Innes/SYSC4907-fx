@@ -24,7 +24,7 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
-processResources.duplicatesStrategy  = DuplicatesStrategy.EXCLUDE
+processResources.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
 sourceSets {
     main {
