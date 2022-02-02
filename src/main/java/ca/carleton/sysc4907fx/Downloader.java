@@ -7,6 +7,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import javafx.scene.image.Image;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 public class Downloader implements Runnable{
@@ -81,6 +82,10 @@ public class Downloader implements Runnable{
                 e.printStackTrace();
             }
         }
+    }
+
+    public Optional<Image> peek(int angle){
+        return cash.peek(angle);
     }
 
     public void stop() {
