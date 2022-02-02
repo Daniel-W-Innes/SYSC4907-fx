@@ -19,6 +19,7 @@ public class Downloader implements Runnable{
     public static final int numThreads = 10;
     public static final int angleTolerance = 180;
     public static final String size = "1280x960";
+    private boolean exit;
 
     public Downloader(Car car, String apiKey) {
         this.apiKey = apiKey;
@@ -39,7 +40,7 @@ public class Downloader implements Runnable{
 
         @Override
         public void run() {
-            while (true){
+            while (!exit){
                 try {
                     DownloadRequest request = requests.take();
                     HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview?size="+size+"&location="+request.location().toString()+"&heading="+request.angle()+"&amp;key="+apiKey);
@@ -60,24 +61,30 @@ public class Downloader implements Runnable{
         for (int i = 0; i < numThreads; i++) {
             new Thread(new Consumer(subRequests)).start();
         }
-        while (true){
+        while (!exit){
             try {
                 DownloadRequest request = requests.take();
-                int minAngle = request.angle() -angleTolerance/2;
-                if (minAngle < 0){
-                    minAngle = 360 + minAngle;
-                }
-                int maxAngle = request.angle()+ angleTolerance/2;
-                if (maxAngle > 360){
-                    maxAngle = 360 - maxAngle;
-                }
-                for (int i = minAngle; i <maxAngle; i++) {
-                    subRequests.offer(new DownloadRequest(request.location(), i));
+                if (!cash.has(request.location())){
+                    int minAngle = request.angle() -angleTolerance/2;
+                    if (minAngle < 0){
+                        minAngle = 360 + minAngle;
+                    }
+                    int maxAngle = request.angle()+ angleTolerance/2;
+                    if (maxAngle > 360){
+                        maxAngle = 360 - maxAngle;
+                    }
+                    for (int i = minAngle; i <maxAngle; i++) {
+                        subRequests.offer(new DownloadRequest(request.location(), i));
+                    }
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void stop() {
+        exit = true;
     }
 
     public boolean tryTransfer(DownloadRequest request) throws InterruptedException {

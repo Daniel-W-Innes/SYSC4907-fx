@@ -46,6 +46,10 @@ public class Car {
         angle += 1;
     }
 
+    public int getAngle() {
+        return angle;
+    }
+
     public void exit() {
         executorService.shutdown();
     }

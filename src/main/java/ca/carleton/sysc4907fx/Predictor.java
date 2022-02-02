@@ -1,6 +1,6 @@
 package ca.carleton.sysc4907fx;
 
-import javafx.scene.image.Image;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -22,6 +22,7 @@ public class Predictor implements Runnable {
     private final String apiKey;
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final CloseableHttpClient client;
+    private final ObjectMapper mapper = new ObjectMapper();
 
 
     public Predictor(Car car,Downloader downloader ,String apiKey) {
@@ -33,16 +34,16 @@ public class Predictor implements Runnable {
 
     @Override
     public void run() {
-        executor.scheduleAtFixedRate(()->OFFSETS.parallelStream().forEach((offset)->{
+        executor.scheduleAtFixedRate(()-> OFFSETS.parallelStream().forEach((offset)->{
             HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview/metadata?size="+Downloader.size+"&location="+car.getLatLongOffset(offset)+"&amp;key="+apiKey);
             try (CloseableHttpResponse response = client.execute(httpget)){
                 if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
-                    downloader.tryTransfer(new DownloadRequest())
-                    cash.add(request.location(),request.angle(),new Image(response.getEntity().getContent()));
+                    Metadata metadata = mapper.readValue(response.getEntity().getContent(), Metadata.class);
+                    downloader.tryTransfer(new DownloadRequest(new Location(metadata.lat(),metadata.lng()),car.getAngle()));
                 }
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
-        }),UPDATE_FREQUENCY,TIME_UNIT);
+        }),0,UPDATE_FREQUENCY,TIME_UNIT);
     }
 }
