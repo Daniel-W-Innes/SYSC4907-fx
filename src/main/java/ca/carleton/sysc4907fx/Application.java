@@ -1,6 +1,5 @@
 package ca.carleton.sysc4907fx;
 
-import io.grpc.ManagedChannelBuilder;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -10,7 +9,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Objects;
@@ -21,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 public class Application extends javafx.application.Application {
     private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private final Car car;
-    private final ImageDownloaderGrpc.ImageDownloaderBlockingStub stub;
     private final Scene scene;
     private final ImageView imageView;
     private final Text text;
@@ -39,9 +36,6 @@ public class Application extends javafx.application.Application {
         pane.setAlignment(Pos.TOP_CENTER);
 
         scene = new Scene(pane);
-
-        io.grpc.Channel channel = ManagedChannelBuilder.forAddress("localhost", 8080).usePlaintext().maxInboundMessageSize(20000000).build();
-        stub = ImageDownloaderGrpc.newBlockingStub(channel);
     }
 
     public static void main(String[] args) {
@@ -73,7 +67,5 @@ public class Application extends javafx.application.Application {
 
     private void updateImage() {
         text.setText(car.toString());
-        Proxy.Image image = stub.getImage(car.getLatLong());
-        imageView.setImage(new Image(new ByteArrayInputStream(image.getImageData().toByteArray())));
     }
 }

@@ -6,45 +6,43 @@ import java.util.concurrent.TimeUnit;
 
 
 public class Car {
-    public static final int jolt = 1;
+    public static final int maxJ = 1;
     public static final int maxA = 12;
-    public static final double millToSec = 1.0 / 1000;
+    public static final int timeDilation = 2;
     private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private double x, y, v, a;
-    private double angle;
+    private int j, angle;
+    private long lastUpdated;
 
     private int zoneNumber;
     private char zoneName;
 
     public Car(double latitude, double longitude) {
+        lastUpdated = System.nanoTime();
         executorService.scheduleAtFixedRate(this::update, 0, 1, TimeUnit.MILLISECONDS);
         fromWGS84(latitude, longitude);
         angle = 0;
     }
 
-    public void Forward() {
-        System.out.println("Forward");
-        a += jolt;
+    public synchronized void Forward() {
+        a += maxJ;
         if (a > maxA) {
             a = maxA;
         }
     }
 
-    public void Backward() {
-        System.out.println("Backward");
-        a -= jolt;
+    public synchronized void Backward() {
+        a -= maxJ;
         if (a < -maxA) {
             a = -maxA;
         }
     }
 
-    public void Left() {
-        System.out.println("Left");
+    public synchronized void Left() {
         angle -= 1;
     }
 
-    public void Right() {
-        System.out.println("Right");
+    public synchronized void Right() {
         angle += 1;
     }
 
@@ -52,19 +50,27 @@ public class Car {
         executorService.shutdown();
     }
 
-    private void update() {
-        if (a > 0) {
-            if (a < jolt * millToSec) a = 0;
-            a -= jolt * millToSec;
-        } else if (a < 0) {
-            if (a > -jolt * millToSec) a = 0;
-            a += jolt * millToSec;
-        }
+    private synchronized void update() {
+        long next = System.nanoTime();
+        long dt = (next - lastUpdated)/timeDilation;
+        j = a > 0 ? -maxJ: maxJ;
+        x += displacement(dt, v, a, j) * Math.sin(angle);
+        y += displacement(dt, v, a, j) * Math.cos(angle);
+        v += deltaV(dt, a, j);
+        a += deltaA(dt, a, j);
+        lastUpdated = next;
+    }
 
-        v += a * millToSec;
+    private static double displacement(double dt, double v, double a, double j) {
+        return v * dt + 0.5 * a * Math.pow(dt, 2) + 1.0 / 6 * j * Math.pow(Math.min( -a / j, dt), 3);
+    }
 
-        x += v * millToSec * Math.sin(angle);
-        y += v * millToSec * Math.cos(angle);
+    private static double deltaV(double dt, double a, double j) {
+        return a * dt + 0.5 * j * Math.pow(Math.min( -a / j, dt), 2);
+    }
+
+    private static double deltaA(double dt, double a, double j) {
+        return j * Math.min( -a / j, dt);
     }
 
     private void fromWGS84(double latitude, double longitude) {
@@ -96,10 +102,18 @@ public class Car {
         y = Math.round(y * 100) * 0.01;
     }
 
+    public Location getLatLongOffset(double dt) {
+        double x2 = x + displacement(dt, v, a, j) * Math.sin(angle);
+        double y2 = y + displacement(dt, v, a, j) * Math.cos(angle);
+        return getLatLong(x2,y2,zoneName,zoneNumber);
+    }
 
-    public Proxy.Location getLatLong() {
-        double latitude, longitude;
-        double north;
+    public Location getLatLong() {
+        return getLatLong(x,y,zoneName,zoneNumber);
+    }
+
+    private static Location getLatLong(double x, double y, char zoneName, int zoneNumber) {
+        double latitude, longitude, north;
         if (zoneName > 'M') {
             north = y;
         } else {
@@ -113,7 +127,7 @@ public class Car {
         longitude = Math.atan((Math.exp((x - 500000) / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))) * (1 - 0.006739496742 * Math.pow((x - 500000) / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))), 2) / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2) / 3)) - Math.exp(-(x - 500000) / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))) * (1 - 0.006739496742 * Math.pow((x - 500000) / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))), 2) / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2) / 3))) / 2 / Math.cos((north - 0.9996 * 6399593.625 * (north / 6366197.724 / 0.9996 - 0.006739496742 * 3 / 4 * (north / 6366197.724 / 0.9996 + Math.sin(2 * north / 6366197.724 / 0.9996) / 2) + Math.pow(0.006739496742 * 3 / 4, 2) * 5 / 3 * (3 * (north / 6366197.724 / 0.9996 + Math.sin(2 * north / 6366197.724 / 0.9996) / 2) + Math.sin(2 * north / 6366197.724 / 0.9996) * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)) / 4 - Math.pow(0.006739496742 * 3 / 4, 3) * 35 / 27 * (5 * (3 * (north / 6366197.724 / 0.9996 + Math.sin(2 * north / 6366197.724 / 0.9996) / 2) + Math.sin(2 * north / 6366197.724 / 0.9996) * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)) / 4 + Math.sin(2 * north / 6366197.724 / 0.9996) * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2) * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)) / 3)) / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))) * (1 - 0.006739496742 * Math.pow((x - 500000) / (0.9996 * 6399593.625 / Math.sqrt((1 + 0.006739496742 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)))), 2) / 2 * Math.pow(Math.cos(north / 6366197.724 / 0.9996), 2)) + north / 6366197.724 / 0.9996)) * 180 / Math.PI + zoneNumber * 6 - 183;
         longitude = Math.round(longitude * 10000000);
         longitude = longitude / 10000000;
-        return Proxy.Location.newBuilder().setLatitude(latitude).setLongitude(longitude).build();
+        return new Location(latitude, longitude);
     }
 
     @Override
