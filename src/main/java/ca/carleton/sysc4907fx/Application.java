@@ -19,16 +19,21 @@ import java.util.concurrent.TimeUnit;
 public class Application extends javafx.application.Application {
     private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private final Car car;
+    private final Cash cash;
     private final Scene scene;
     private final ImageView imageView;
     private final Text text;
 
     public Application() throws FileNotFoundException {
         car = new Car(45.386601, -75.691193);
+        cash = new Cash(car);
+        int angle = car.getAngle();
+        Optional<Image> image = cash.peek(angle);
+        imageView = new ImageView(String.valueOf(image));
 
         StackPane pane = new StackPane();
-        Image image = new Image(new FileInputStream(Objects.requireNonNull(Application.class.getResource("test.jpeg")).getPath()));
-        imageView = new ImageView(image);
+        
+       
         pane.getChildren().add(imageView);
 
         text = new Text("loading");
