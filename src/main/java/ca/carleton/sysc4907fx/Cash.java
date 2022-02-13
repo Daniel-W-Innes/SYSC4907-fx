@@ -30,7 +30,7 @@ public class Cash{
         }
     }
 
-    public Optional<Image> peek(int angle) {
+    public Optional<Image> peek() {
         Location curLoc = car.getLatLong();
         Image next = null;
         double minDistance = Double.MAX_VALUE;
@@ -38,7 +38,7 @@ public class Cash{
             double distance = entry.getKey().distance(curLoc);
             if (distance < minDistance){
                 minDistance = distance;
-                next = images.get(entry.getKey()).get(angle);
+                next = images.get(entry.getKey()).get(car.getAngle());
             }
             if (distance > entry.getValue()){
                 distances.remove(entry.getKey());

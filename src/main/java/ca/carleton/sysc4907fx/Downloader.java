@@ -84,8 +84,8 @@ public class Downloader implements Runnable{
         }
     }
 
-    public Optional<Image> peek(int angle){
-        return cash.peek(angle);
+    public Optional<Image> peek(){
+        return cash.peek();
     }
 
     public void stop() {
