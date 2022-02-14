@@ -15,7 +15,7 @@ class PredictorTest {
     private static final Map<Location,Location> LOCATIONS = Map.of(new Location(45.389614, -75.693626), new Location(45.38955367223915,-75.69367997043345));
 
     @BeforeEach
-    void setup() {
+    void setUp() {
         apiKey = System.getenv("API_KEY");
         assertNotNull(apiKey);
         requests = new LinkedTransferQueue<>();
