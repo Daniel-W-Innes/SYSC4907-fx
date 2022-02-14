@@ -12,6 +12,7 @@ import javafx.stage.Stage;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,20 +24,27 @@ public class Application extends javafx.application.Application {
     private final Scene scene;
     private final ImageView imageView;
     private final Text text;
+    private boolean p;
+    private final Downloader downloader;
+    private final Location location;
+    private final Predictor predictor;
+    private final String apiKey;
+    private final TransferQueue<DownloadRequest> requests;
+    private final int angleTolerance;
 
     public Application() throws FileNotFoundException {
         car = new Car(45.386601, -75.691193);
+        angleTolerance = 4;
+        apiKey = System.getenv("API_KEY");
+        requests = new LinkedTransferQueue<>();
+        downloader = new Downloader(apiKey,requests,cash,angleTolerance);
+        predictor = new Predictor(car,apiKey,requests);
+        location = new Location(45.386601, -75.691193);
         cash = new Cash(car);
-        StackPane pane = new StackPane();
-        Optional<Image> image = cash.peek();
-        imageView = new ImageView(String.valueOf(image));
-        pane.getChildren().add(imageView);
-
-        text = new Text("loading");
-        pane.getChildren().add(text);
-        pane.setAlignment(Pos.TOP_CENTER);
-
-        scene = new Scene(pane);
+        p = true;
+        
+       
+        
     }
 
     public static void main(String[] args) {
@@ -67,6 +75,17 @@ public class Application extends javafx.application.Application {
     }
 
     private void updateImage() {
+        StackPane pane = new StackPane();
+        Optional<Image> image = cash.peek();
+        p = image.isPresent();
+        if (p == true) { 
+            imageView = new ImageView(String.valueOf(image));
+        }
+        pane.getChildren().add(imageView);
+        text = new Text("loading");
+        pane.getChildren().add(text);
+        pane.setAlignment(Pos.TOP_CENTER);
+        scene = new Scene(pane);
         text.setText(car.toString());
     }
 }
