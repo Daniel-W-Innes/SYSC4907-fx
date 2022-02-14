@@ -36,15 +36,19 @@ public class Predictor implements Runnable {
     @Override
     public void run() {
         executor.scheduleAtFixedRate(()-> OFFSETS.parallelStream().forEach((offset)->{
-            HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview/metadata?size="+Downloader.size+"&location="+car.getLatLongOffset(offset)+"&amp;key="+apiKey);
+            HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview/metadata?size="+Downloader.size+"&location="+car.getLatLongOffset(offset)+"&key="+apiKey);
             try (CloseableHttpResponse response = client.execute(httpget)){
                 if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
                     Metadata metadata = mapper.readValue(response.getEntity().getContent(), Metadata.class);
-                    requests.tryTransfer(new DownloadRequest(new Location(metadata.lat(),metadata.lng()),car.getAngle()));
+                    requests.tryTransfer(new DownloadRequest(metadata.location(),car.getAngle()));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }),0,UPDATE_FREQUENCY,TIME_UNIT);
+    }
+
+    public void stop() {
+        executor.shutdown();
     }
 }
