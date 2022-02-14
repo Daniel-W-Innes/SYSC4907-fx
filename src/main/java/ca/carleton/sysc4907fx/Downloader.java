@@ -1,31 +1,31 @@
 package ca.carleton.sysc4907fx;
 
+import javafx.scene.image.Image;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import javafx.scene.image.Image;
+
 import java.io.IOException;
-import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TransferQueue;
 
 public class Downloader implements Runnable{
     private final TransferQueue<DownloadRequest> requests;
     private final BlockingQueue<DownloadRequest> subRequests;
     private final Cash cash;
     private final String apiKey;
-    public static final long timeout =1;
-    public static final TimeUnit timeOutUnit = TimeUnit.SECONDS;
     public static final int numThreads = 10;
     public static final int angleTolerance = 180;
     public static final String size = "1280x960";
     private boolean exit;
 
-    public Downloader(Car car, String apiKey) {
+    public Downloader(String apiKey, TransferQueue<DownloadRequest> requests,Cash cash) {
         this.apiKey = apiKey;
-        requests = new LinkedTransferQueue<>();
-        cash = new Cash(car);
+        this.requests = requests;
+        this.cash = cash;
         subRequests = new LinkedBlockingDeque<>();
     }
 
@@ -83,16 +83,7 @@ public class Downloader implements Runnable{
             }
         }
     }
-
-    public Optional<Image> peek(){
-        return cash.peek();
-    }
-
     public void stop() {
         exit = true;
-    }
-
-    public boolean tryTransfer(DownloadRequest request) throws InterruptedException {
-        return requests.tryTransfer(request, timeout,timeOutUnit);
     }
 }
