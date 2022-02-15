@@ -1,6 +1,5 @@
 package ca.carleton.sysc4907fx;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -9,18 +8,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-
-
 import java.io.FileNotFoundException;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
 
-import javax.xml.stream.Location;
 
 public class Application extends javafx.application.Application {
     private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -43,13 +38,12 @@ public class Application extends javafx.application.Application {
         cash = new Cash(car);
         angleTolerance = 4;
         apiKey = System.getenv("API_KEY");
-        assertNotNull(apiKey);
+
 
         TransferQueue requests = new LinkedTransferQueue<>();
         downloader = new Downloader(apiKey, requests, cash, angleTolerance);
 
         new Thread(downloader).start();
-
         predictor = new Predictor(car,apiKey, requests);
         predictor.run();
 
