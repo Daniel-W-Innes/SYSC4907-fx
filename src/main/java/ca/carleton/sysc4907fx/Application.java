@@ -35,10 +35,10 @@ public class Application extends javafx.application.Application {
 
     private  final int angleTolerance;
     private final Downloader downloader;
-
+    private static final Location LOCATION = new Location(45.389614, -75.693626);
 
     public Application() throws FileNotFoundException {
-        car = new Car(45.389614, -75.693626);
+        car = new Car(LOCATION.lat(), LOCATION.lng());
         cash = new Cash(car);
         angleTolerance = 4;
         apiKey = System.getenv("API_KEY");
@@ -46,7 +46,8 @@ public class Application extends javafx.application.Application {
 
         requests = new LinkedTransferQueue<>();
         downloader = new Downloader(apiKey, requests, cash, angleTolerance);
-        downloader.run();
+        requests.add(new DownloadRequest(LOCATION,0));
+        new Thread(downloader).start();
 
         predictor = new Predictor(car,apiKey,requests);
         predictor.run();
