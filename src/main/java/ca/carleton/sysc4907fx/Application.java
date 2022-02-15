@@ -1,6 +1,5 @@
 package ca.carleton.sysc4907fx;
 
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -21,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
 
+import javax.xml.stream.Location;
+
 public class Application extends javafx.application.Application {
     private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private static final ScheduledExecutorService executorService1 = Executors.newSingleThreadScheduledExecutor();
@@ -31,25 +32,25 @@ public class Application extends javafx.application.Application {
     private final Text text;
     private final Predictor predictor;
     private final String apiKey;
-    private final  TransferQueue<DownloadRequest> requests;
 
-    private  final int angleTolerance;
+
+    private final int angleTolerance;
     private final Downloader downloader;
-    private static final Location LOCATION = new Location(45.389614, -75.693626);
+
 
     public Application() throws FileNotFoundException {
-        car = new Car(LOCATION.lat(), LOCATION.lng());
+        car = new Car(45.389614,  -75.693626);
         cash = new Cash(car);
         angleTolerance = 4;
         apiKey = System.getenv("API_KEY");
         assertNotNull(apiKey);
 
-        requests = new LinkedTransferQueue<>();
+        TransferQueue requests = new LinkedTransferQueue<>();
         downloader = new Downloader(apiKey, requests, cash, angleTolerance);
-        requests.add(new DownloadRequest(LOCATION,0));
+
         new Thread(downloader).start();
 
-        predictor = new Predictor(car,apiKey,requests);
+        predictor = new Predictor(car,apiKey, requests);
         predictor.run();
 
         StackPane pane = new StackPane();
