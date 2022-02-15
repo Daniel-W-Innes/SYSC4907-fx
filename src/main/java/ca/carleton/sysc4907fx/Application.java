@@ -1,5 +1,7 @@
 package ca.carleton.sysc4907fx;
 
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -14,45 +16,66 @@ import java.io.FileNotFoundException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+
+
 public class Application extends javafx.application.Application {
     private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private static final ScheduledExecutorService executorService1 = Executors.newSingleThreadScheduledExecutor();
     private final Car car;
     private final Cash cash;
     private final Scene scene;
-    private final ImageView imageView;
+    private ImageView imageView;
     private final Text text;
-    private boolean p;
-    private final Downloader downloader;
-    private final Location location;
     private final Predictor predictor;
     private final String apiKey;
     private final TransferQueue<DownloadRequest> requests;
     private final int angleTolerance;
+    private final Downloader downloader;
+
 
     public Application() throws FileNotFoundException {
-        car = new Car(45.386601, -75.691193);
+        car = new Car(45.389614, -75.693626);
+        cash = new Cash(car);
         angleTolerance = 4;
         apiKey = System.getenv("API_KEY");
+        assertNotNull(apiKey);
+
         requests = new LinkedTransferQueue<>();
-        downloader = new Downloader(apiKey,requests,cash,angleTolerance);
+        downloader = new Downloader(apiKey, requests, cash, angleTolerance);
+        downloader.run();
+
         predictor = new Predictor(car,apiKey,requests);
-        location = new Location(45.386601, -75.691193);
-        cash = new Cash(car);
-        p = true;
-        
-       
-        
+        predictor.run();
+
+
+
+        StackPane pane = new StackPane();
+        Optional<Image> image = cash.peek();
+        boolean p;
+        p = image.isPresent();
+
+
+        pane.getChildren().add(imageView);
+
+        text = new Text("loading");
+        pane.getChildren().add(text);
+        pane.setAlignment(Pos.TOP_CENTER);
+        scene = new Scene(pane);
+        text.setText(car.toString());
     }
 
     public static void main(String[] args) {
         launch();
     }
 
+
     @Override
     public void start(Stage stage) {
+
         scene.addEventHandler(KeyEvent.KEY_PRESSED, (key) -> {
             switch (key.getCode()) {
                 case W -> car.Forward();
@@ -61,6 +84,18 @@ public class Application extends javafx.application.Application {
                 case D -> car.Right();
             }
         });
+
+        executorService1.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                Optional<Image> image = cash.peek();
+                boolean p;
+                p = image.isPresent();
+                if (p) {
+                    imageView = new ImageView(String.valueOf(image));
+                }
+            }
+        }, 0, 16700, TimeUnit.MICROSECONDS);
         stage.setTitle("SYSC 4907 Simulator");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> this.exit());
@@ -75,17 +110,7 @@ public class Application extends javafx.application.Application {
     }
 
     private void updateImage() {
-        StackPane pane = new StackPane();
-        Optional<Image> image = cash.peek();
-        p = image.isPresent();
-        if (p == true) { 
-            imageView = new ImageView(String.valueOf(image));
-        }
-        pane.getChildren().add(imageView);
-        text = new Text("loading");
-        pane.getChildren().add(text);
-        pane.setAlignment(Pos.TOP_CENTER);
-        scene = new Scene(pane);
+
         text.setText(car.toString());
     }
 }
