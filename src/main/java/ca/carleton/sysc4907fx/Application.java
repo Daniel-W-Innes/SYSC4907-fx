@@ -51,14 +51,8 @@ public class Application extends javafx.application.Application {
         predictor = new Predictor(car,apiKey,requests);
         predictor.run();
 
-
-
         StackPane pane = new StackPane();
-        Optional<Image> image = cash.peek();
-        boolean p;
-        p = image.isPresent();
-
-
+       
         pane.getChildren().add(imageView);
 
         text = new Text("loading");
