@@ -3,7 +3,6 @@ plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.10'
     id 'org.beryx.jlink' version '2.24.1'
-    id 'com.google.protobuf' version "0.8.18"
 }
 
 group 'ca.carleton'
@@ -26,17 +25,6 @@ tasks.withType(JavaCompile) {
 
 processResources.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-sourceSets {
-    main {
-        proto {
-            srcDir 'src/main/proto'
-        }
-        java {
-            srcDirs 'src/main/java', 'generated-sources/main/java', 'generated-sources/main/grpc'
-        }
-    }
-}
-
 application {
     mainClass = 'ca.carleton.sysc4907fx.Application'
 }
@@ -47,13 +35,13 @@ javafx {
 }
 
 dependencies {
+    implementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
-
-    implementation 'io.grpc:grpc-netty-shaded:1.43.1'
-    implementation 'io.grpc:grpc-protobuf:1.43.1'
-    implementation 'io.grpc:grpc-stub:1.43.1'
-    compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
+    // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.1'
 }
 
 test {
@@ -65,25 +53,6 @@ jlink {
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     launcher {
         name = 'app'
-    }
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.19.1"
-    }
-
-    generateProtoTasks.generatedFilesBaseDir = 'generated-sources'
-
-    plugins {
-        grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.43.1'
-        }
-    }
-    generateProtoTasks {
-        ofSourceSet('main')*.plugins {
-            grpc {}
-        }
     }
 }
 
