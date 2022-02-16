@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Cash{
+public class Cash {
     private final Map<Location, Double> distances;
     private final Map<Location, Map<Integer, Image>> images;
     private final Car car;
@@ -17,15 +17,15 @@ public class Cash{
         distances = new ConcurrentHashMap<>();
     }
 
-    public boolean has(Location location){
+    public boolean has(Location location) {
         return distances.containsKey(location);
     }
 
     public void add(Location location, int angle, Image image) {
         distances.put(location, location.distance(car.getLatLong()));
-        if (images.containsKey(location)){
+        if (images.containsKey(location)) {
             images.get(location).put(angle, image);
-        }else {
+        } else {
             images.put(location, new ConcurrentHashMap<>(Map.of(angle, image)));
         }
     }
@@ -33,16 +33,16 @@ public class Cash{
     public Optional<Image> peek() {
         Location curLoc = car.getLatLong();
         Image next = null;
-        Location nextLocation= null;
+        Location nextLocation = null;
         double minDistance = Double.MAX_VALUE;
-        for (Map.Entry<Location, Double>  entry: distances.entrySet() ) {
+        for (Map.Entry<Location, Double> entry : distances.entrySet()) {
             double distance = entry.getKey().distance(curLoc);
-            if (distance < minDistance){
+            if (distance < minDistance) {
                 minDistance = distance;
                 nextLocation = entry.getKey();
                 next = images.get(nextLocation).get(car.getAngle());
             }
-            if (distance > entry.getValue() && entry.getKey() != nextLocation){
+            if (distance > entry.getValue() && entry.getKey() != nextLocation) {
                 distances.remove(entry.getKey());
                 images.remove(entry.getKey());
             }

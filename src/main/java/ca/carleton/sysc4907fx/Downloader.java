@@ -34,34 +34,6 @@ public class Downloader implements Runnable {
         subRequests = new LinkedBlockingDeque<>();
     }
 
-    private class Consumer implements Runnable {
-        private final BlockingQueue<DownloadRequest> requests;
-        private final CloseableHttpClient client;
-
-        private Consumer(BlockingQueue<DownloadRequest> requests) {
-            this.requests = requests;
-            client = HttpClients.createDefault();
-        }
-
-
-        @Override
-        public void run() {
-            while (!exit) {
-                try {
-                    DownloadRequest request = requests.take();
-                    HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview?size=" + SIZE + "&location=" + request.location().toString() + "&heading=" + request.angle() + "&key=" + apiKey);
-                    try (CloseableHttpResponse response = client.execute(httpget)) {
-                        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                            cash.add(request.location(), request.angle(), new Image(response.getEntity().getContent()));
-                        }
-                    }
-                } catch (InterruptedException | IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
     @Override
     public void run() {
         for (int i = 0; i < NUM_THREADS; i++) {
@@ -102,5 +74,33 @@ public class Downloader implements Runnable {
 
     public void stop() {
         exit = true;
+    }
+
+    private class Consumer implements Runnable {
+        private final BlockingQueue<DownloadRequest> requests;
+        private final CloseableHttpClient client;
+
+        private Consumer(BlockingQueue<DownloadRequest> requests) {
+            this.requests = requests;
+            client = HttpClients.createDefault();
+        }
+
+
+        @Override
+        public void run() {
+            while (!exit) {
+                try {
+                    DownloadRequest request = requests.take();
+                    HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview?size=" + SIZE + "&location=" + request.location().toString() + "&heading=" + request.angle() + "&key=" + apiKey);
+                    try (CloseableHttpResponse response = client.execute(httpget)) {
+                        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                            cash.add(request.location(), request.angle(), new Image(response.getEntity().getContent()));
+                        }
+                    }
+                } catch (InterruptedException | IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

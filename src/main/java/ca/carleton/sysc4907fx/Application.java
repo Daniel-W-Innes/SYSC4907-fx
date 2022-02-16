@@ -23,6 +23,7 @@ public class Application extends javafx.application.Application {
     private final Predictor predictor;
     private final Downloader downloader;
     private final Cash cash;
+    private final TransferQueue<DownloadRequest> requests;
 
     public Application() throws FileNotFoundException {
         car = new Car(45.386601, -75.691193, 330);
@@ -39,7 +40,7 @@ public class Application extends javafx.application.Application {
 
         String apiKey = System.getenv("API_KEY");
         boolean debug = Boolean.parseBoolean(System.getenv("DEBUG"));
-        TransferQueue<DownloadRequest> requests = new LinkedTransferQueue<>();
+        requests = new LinkedTransferQueue<>();
         cash = new Cash(car);
         predictor = new Predictor(car, apiKey, requests);
         downloader = debug ? new Downloader(apiKey, requests, cash, 10) : new Downloader(apiKey, requests, cash);
