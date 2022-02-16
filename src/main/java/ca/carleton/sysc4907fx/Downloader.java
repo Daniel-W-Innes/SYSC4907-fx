@@ -42,6 +42,7 @@ public class Downloader implements Runnable {
         while (!exit) {
             try {
                 DownloadRequest request = requests.take();
+                subRequests.put(request);
                 if (!cash.has(request.location())) {
                     int minAngle = request.angle() - angleTolerance / 2;
                     int maxAngle = request.angle() + angleTolerance / 2;
@@ -56,7 +57,7 @@ public class Downloader implements Runnable {
                         for (int i = 0; i < -(360 - maxAngle); i++) {
                             subRequests.put(new DownloadRequest(request.location(), i));
                         }
-                        for (int i = minAngle; i > 0; i--) {
+                        for (int i = 360; i > minAngle; i--) {
                             subRequests.put(new DownloadRequest(request.location(), i));
                         }
                     } else {
