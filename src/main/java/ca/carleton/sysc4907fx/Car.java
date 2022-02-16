@@ -18,33 +18,56 @@ public class Car {
     private char zoneName;
 
     public Car(double latitude, double longitude) {
+        this(latitude, longitude, 0);
+    }
+
+    public Car(double latitude, double longitude, int angle) {
         lastUpdated = System.nanoTime();
         executorService.scheduleAtFixedRate(this::update, 0, 1, TimeUnit.MILLISECONDS);
         fromWGS84(latitude, longitude);
-        angle = 0;
+        this.angle = angle;
     }
 
-    public synchronized void Forward() {
+    public synchronized void forward() {
         a += maxJ;
         if (a > maxA) {
             a = maxA;
         }
     }
 
-    public synchronized void Backward() {
+    public synchronized void backward() {
         a -= maxJ;
         if (a < -maxA) {
             a = -maxA;
         }
     }
 
-    public synchronized void Left() {
-        angle -= 1;
+    public synchronized void left() {
+        if (angle == 0) {
+            angle = 359;
+        } else {
+            angle -= 1;
+        }
     }
 
-    public synchronized void Right() {
-        angle += 1;
+    public synchronized void right() {
+        if (angle == 359) {
+            angle = 0;
+        } else {
+            angle += 1;
+        }
     }
+
+    public synchronized void cruiseControl() {
+        a = 0;
+        v = 10;
+    }
+
+    public synchronized void stop() {
+        a = 0;
+        v = 0;
+    }
+
 
     public int getAngle() {
         return angle;
@@ -56,25 +79,52 @@ public class Car {
 
     private synchronized void update() {
         long next = System.nanoTime();
-        long dt = (next - lastUpdated)/timeDilation;
-        j = a > 0 ? -maxJ: maxJ;
-        x += displacement(dt, v, a, j) * Math.sin(angle);
-        y += displacement(dt, v, a, j) * Math.cos(angle);
+        double dt = ((next - lastUpdated) * Math.pow(10, -9)) / timeDilation;
+        j = a > 0 ? -maxJ : maxJ;
+        double d = displacement(dt, v, a, j);
+        x += XComponent(d, angle);
+        y += YComponent(d, angle);
         v += deltaV(dt, a, j);
         a += deltaA(dt, a, j);
         lastUpdated = next;
     }
 
-    private static double displacement(double dt, double v, double a, double j) {
-        return v * dt + 0.5 * a * Math.pow(dt, 2) + 1.0 / 6 * j * Math.pow(Math.min( -a / j, dt), 3);
+    public static double XComponent(double d, int angle) {
+        if (angle < 90) {
+            return d * Math.sin(Math.toRadians(angle));
+        }
+        if (angle < 180) {
+            return d * Math.cos(Math.toRadians(angle - 90));
+        }
+        if (angle < 270) {
+            return -d * Math.sin(Math.toRadians(angle - 180));
+        }
+        return -d * Math.cos(Math.toRadians(angle - 270));
     }
 
-    private static double deltaV(double dt, double a, double j) {
-        return a * dt + 0.5 * j * Math.pow(Math.min( -a / j, dt), 2);
+    public static double YComponent(double d, int angle) {
+        if (angle < 90) {
+            return d * Math.cos(Math.toRadians(angle));
+        }
+        if (angle < 180) {
+            return -d * Math.sin(Math.toRadians(angle - 90));
+        }
+        if (angle < 270) {
+            return -d * Math.cos(Math.toRadians(angle - 180));
+        }
+        return d * Math.sin(Math.toRadians(angle - 270));
     }
 
-    private static double deltaA(double dt, double a, double j) {
-        return j * Math.min( -a / j, dt);
+    public static double displacement(double dt, double v, double a, double j) {
+        return v * dt + 0.5 * a * Math.pow(dt, 2) + 1.0 / 6 * j * Math.pow(Math.min(-a / j, dt), 3);
+    }
+
+    public static double deltaV(double dt, double a, double j) {
+        return a * dt + 0.5 * j * Math.pow(Math.min(-a / j, dt), 2);
+    }
+
+    public static double deltaA(double dt, double a, double j) {
+        return j * Math.min(-a / j, dt);
     }
 
     private void fromWGS84(double latitude, double longitude) {
@@ -107,13 +157,12 @@ public class Car {
     }
 
     public Location getLatLongOffset(double dt) {
-        double x2 = x + displacement(dt, v, a, j) * Math.sin(angle);
-        double y2 = y + displacement(dt, v, a, j) * Math.cos(angle);
-        return getLatLong(x2,y2,zoneName,zoneNumber);
+        double d = displacement(dt, v, a, j);
+        return getLatLong(x + XComponent(d, angle), y + YComponent(d, angle), zoneName, zoneNumber);
     }
 
     public Location getLatLong() {
-        return getLatLong(x,y,zoneName,zoneNumber);
+        return getLatLong(x, y, zoneName, zoneNumber);
     }
 
     private static Location getLatLong(double x, double y, char zoneName, int zoneNumber) {

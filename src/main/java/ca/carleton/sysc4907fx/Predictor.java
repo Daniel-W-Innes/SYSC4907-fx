@@ -39,7 +39,9 @@ public class Predictor implements Runnable {
             try (CloseableHttpResponse response = CLIENT.execute(httpget)){
                 if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
                     Metadata metadata = MAPPER.readValue(response.getEntity().getContent(), Metadata.class);
-                    requests.tryTransfer(new DownloadRequest(metadata.location(),car.getAngle()));
+                    if (metadata.status().equals("OK")){
+                        requests.tryTransfer(new DownloadRequest(metadata.location(),car.getAngle()));
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();

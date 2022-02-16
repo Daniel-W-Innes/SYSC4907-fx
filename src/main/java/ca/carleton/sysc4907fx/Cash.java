@@ -33,14 +33,16 @@ public class Cash{
     public Optional<Image> peek() {
         Location curLoc = car.getLatLong();
         Image next = null;
+        Location nextLocation= null;
         double minDistance = Double.MAX_VALUE;
         for (Map.Entry<Location, Double>  entry: distances.entrySet() ) {
             double distance = entry.getKey().distance(curLoc);
             if (distance < minDistance){
                 minDistance = distance;
-                next = images.get(entry.getKey()).get(car.getAngle());
+                nextLocation = entry.getKey();
+                next = images.get(nextLocation).get(car.getAngle());
             }
-            if (distance > entry.getValue()){
+            if (distance > entry.getValue() && entry.getKey() != nextLocation){
                 distances.remove(entry.getKey());
                 images.remove(entry.getKey());
             }
