@@ -3,6 +3,7 @@ package ca.carleton.sysc4907fx;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
 
@@ -19,12 +20,21 @@ class DownloaderTest {
         apiKey = System.getenv("API_KEY");
         assertNotNull(apiKey);
         requests = new LinkedTransferQueue<>();
-        car = new Car(LOCATION.lat(), LOCATION.lng());
+        try {
+            car = new Car(LOCATION.lat(), LOCATION.lng());
+        } catch (IOException e) {
+            fail();
+        }
     }
 
     @Test
     void run() {
-        Cash cash = new Cash(car);
+        Cash cash = null;
+        try {
+            cash = new Cash(car);
+        } catch (IOException e) {
+            fail();
+        }
         Downloader downloader = new Downloader(apiKey, requests,cash,4);
         requests.add(new DownloadRequest(LOCATION,0));
         new Thread(downloader).start();
