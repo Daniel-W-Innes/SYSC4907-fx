@@ -3,6 +3,7 @@ package ca.carleton.sysc4907fx;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
@@ -25,7 +26,12 @@ class PredictorTest {
     void run() {
         LOCATIONS.forEach(
                 (location, location2) -> {
-                    Predictor predictor = new Predictor(new Car(location.lat(),location.lng()),apiKey,requests);
+                    Predictor predictor = null;
+                    try {
+                        predictor = new Predictor(new Car(location.lat(),location.lng()),apiKey,requests);
+                    } catch (IOException e) {
+                        fail();
+                    }
                     predictor.run();
                     try {
                         DownloadRequest  request = requests.take();

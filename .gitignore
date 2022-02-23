@@ -121,3 +121,5 @@ gradle-app.setting
 .classpath
 
 /generated-sources/
+
+*_log.csv

@@ -1,5 +1,7 @@
 package ca.carleton.sysc4907fx;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -17,15 +19,23 @@ public class Car {
     private int zoneNumber;
     private char zoneName;
 
-    public Car(double latitude, double longitude) {
+    private final FileWriter writer;
+
+    public Car(double latitude, double longitude) throws IOException {
         this(latitude, longitude, 0);
     }
 
-    public Car(double latitude, double longitude, int angle) {
+    public Car(double latitude, double longitude, int angle) throws IOException {
         lastUpdated = System.nanoTime();
         executorService.scheduleAtFixedRate(this::update, 0, 1, TimeUnit.MILLISECONDS);
         fromWGS84(latitude, longitude);
         this.angle = angle;
+        writer = new FileWriter("location_log.csv");
+        executorService.scheduleAtFixedRate(()-> {
+            try {
+                writer.write(getLatLong() + "\n");
+            } catch (IOException ignored) {}
+        }, 0, 1, TimeUnit.SECONDS);
     }
 
     private static Location getLatLong(double x, double y, char zoneName, int zoneNumber) {
@@ -91,6 +101,10 @@ public class Car {
     }
 
     public void exit() {
+        try {
+            writer.flush();
+            writer.close();
+        } catch (IOException ignored) {}
         executorService.shutdown();
     }
 

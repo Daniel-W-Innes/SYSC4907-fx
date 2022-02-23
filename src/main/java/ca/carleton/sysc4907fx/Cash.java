@@ -2,6 +2,8 @@ package ca.carleton.sysc4907fx;
 
 import javafx.scene.image.Image;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,18 +12,24 @@ public class Cash {
     private final Map<Location, Double> distances;
     private final Map<Location, Map<Integer, Image>> images;
     private final Car car;
+    private final FileWriter writerIn, writerOut;
 
-    public Cash(Car car) {
+    public Cash(Car car) throws IOException {
         this.car = car;
         images = new ConcurrentHashMap<>();
         distances = new ConcurrentHashMap<>();
+        writerIn = new FileWriter("cash_add_log.csv");
+        writerOut = new FileWriter("cash_peek_log.csv");
     }
 
-    public boolean has(Location location) {
+    public synchronized boolean has(Location location) {
         return distances.containsKey(location);
     }
 
-    public void add(Location location, int angle, Image image) {
+    public synchronized void add(Location location, int angle, Image image) {
+        try {
+            writerIn.write(location + "\n");
+        } catch (IOException ignored) {}
         distances.put(location, location.distance(car.getLatLong()));
         if (images.containsKey(location)) {
             images.get(location).put(angle, image);
@@ -30,7 +38,7 @@ public class Cash {
         }
     }
 
-    public Optional<Image> peek() {
+    public synchronized Optional<Image> peek() {
         Location curLoc = car.getLatLong();
         Image next = null;
         Location nextLocation = null;
@@ -48,12 +56,24 @@ public class Cash {
             }
             entry.setValue(distance);
         }
+        try {
+            writerOut.write(nextLocation + "\n");
+        } catch (IOException ignored) {}
         return Optional.ofNullable(next);
     }
 
     public void clear() {
         distances.clear();
         images.clear();
+    }
+
+    public void exit() {
+        try {
+            writerIn.flush();
+            writerOut.flush();
+            writerIn.close();
+            writerOut.close();
+        } catch (IOException ignored) {}
     }
 
     public int size() {
