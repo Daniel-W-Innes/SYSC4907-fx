@@ -21,7 +21,7 @@ class DownloaderTest {
         assertNotNull(apiKey);
         requests = new LinkedTransferQueue<>();
         try {
-            car = new Car(LOCATION.lat(), LOCATION.lng());
+            car = new Car(LOCATION);
         } catch (IOException e) {
             fail();
         }
@@ -35,7 +35,7 @@ class DownloaderTest {
         } catch (IOException e) {
             fail();
         }
-        Downloader downloader = new Downloader(apiKey, requests,cash,4);
+        Downloader downloader = new Downloader(apiKey, requests,cash,4, false);
         requests.add(new DownloadRequest(LOCATION,0));
         new Thread(downloader).start();
         try {
@@ -43,6 +43,6 @@ class DownloaderTest {
         } catch (InterruptedException e) {
             fail();
         }
-        assertEquals(1,cash.size());
+        assertEquals(1,cash.numOfImages());
     }
 }

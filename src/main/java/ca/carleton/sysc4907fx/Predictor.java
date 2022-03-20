@@ -23,30 +23,34 @@ public class Predictor implements Runnable {
     private static final CloseableHttpClient CLIENT = HttpClients.createDefault();
     private final Car car;
     private final TransferQueue<DownloadRequest> requests;
+    private final boolean testingMode;
     private final String apiKey;
 
 
-    public Predictor(Car car, String apiKey, TransferQueue<DownloadRequest> requests) {
+    public Predictor(Car car, String apiKey, TransferQueue<DownloadRequest> requests, boolean testingMode) {
         this.apiKey = apiKey;
         this.car = car;
         this.requests = requests;
+        this.testingMode = testingMode;
     }
 
     @Override
     public void run() {
-        EXECUTOR.scheduleAtFixedRate(() -> OFFSETS.parallelStream().forEach((offset) -> {
-            HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview/metadata?size=" + Downloader.SIZE + "&location=" + car.getLatLongOffset(offset) + "&key=" + apiKey);
-            try (CloseableHttpResponse response = CLIENT.execute(httpget)) {
-                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                    Metadata metadata = MAPPER.readValue(response.getEntity().getContent(), Metadata.class);
-                    if (metadata.status().equals("OK")) {
-                        requests.tryTransfer(new DownloadRequest(metadata.location(), car.getAngle()));
+        if (!testingMode) {
+            EXECUTOR.scheduleAtFixedRate(() -> OFFSETS.parallelStream().forEach((offset) -> {
+                HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview/metadata?size=" + Downloader.SIZE + "&location=" + car.getLatLongOffset(offset) + "&key=" + apiKey);
+                try (CloseableHttpResponse response = CLIENT.execute(httpget)) {
+                    if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                        Metadata metadata = MAPPER.readValue(response.getEntity().getContent(), Metadata.class);
+                        if (metadata.status().equals("OK")) {
+                            requests.tryTransfer(new DownloadRequest(metadata.location(), car.getAngle()));
+                        }
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }), 0, UPDATE_FREQUENCY, TIME_UNIT);
+            }), 0, UPDATE_FREQUENCY, TIME_UNIT);
+        }
     }
 
     public void stop() {

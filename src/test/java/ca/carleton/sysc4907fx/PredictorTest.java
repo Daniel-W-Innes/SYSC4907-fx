@@ -28,7 +28,7 @@ class PredictorTest {
                 (location, location2) -> {
                     Predictor predictor = null;
                     try {
-                        predictor = new Predictor(new Car(location.lat(),location.lng()),apiKey,requests);
+                        predictor = new Predictor(new Car(location),apiKey,requests);
                     } catch (IOException e) {
                         fail();
                     }

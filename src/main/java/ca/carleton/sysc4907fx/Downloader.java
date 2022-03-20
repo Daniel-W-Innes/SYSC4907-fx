@@ -21,16 +21,18 @@ public class Downloader implements Runnable {
     private final String apiKey;
     private final int angleTolerance;
     private boolean exit;
+    private final boolean testingMode;
 
-    public Downloader(String apiKey, TransferQueue<DownloadRequest> requests, Cash cash) {
-        this(apiKey, requests, cash, 180);
+    public Downloader(String apiKey, TransferQueue<DownloadRequest> requests, Cash cash, boolean testingMode) {
+        this(apiKey, requests, cash, 180, testingMode);
     }
 
-    public Downloader(String apiKey, TransferQueue<DownloadRequest> requests, Cash cash, int angleTolerance) {
+    public Downloader(String apiKey, TransferQueue<DownloadRequest> requests, Cash cash, int angleTolerance, boolean testingMode) {
         this.apiKey = apiKey;
         this.requests = requests;
         this.cash = cash;
         this.angleTolerance = angleTolerance;
+        this.testingMode = testingMode;
         subRequests = new LinkedBlockingDeque<>();
     }
 
@@ -65,7 +67,6 @@ public class Downloader implements Runnable {
                             subRequests.put(new DownloadRequest(request.location(), i));
                         }
                     }
-
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -89,7 +90,7 @@ public class Downloader implements Runnable {
 
         @Override
         public void run() {
-            while (!exit) {
+            while (!exit && !testingMode) {
                 try {
                     DownloadRequest request = requests.take();
                     HttpGet httpget = new HttpGet("https://maps.googleapis.com/maps/api/streetview?size=" + SIZE + "&location=" + request.location().toString() + "&heading=" + request.angle() + "&key=" + apiKey);

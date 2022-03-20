@@ -12,7 +12,7 @@ public class Cash {
     private final Map<Location, Double> distances;
     private final Map<Location, Map<Integer, Image>> images;
     private final Car car;
-    private final FileWriter writerIn, writerOut;
+    private final FileWriter writerIn, writerOut, writerRemove;
 
     public Cash(Car car) throws IOException {
         this.car = car;
@@ -20,6 +20,7 @@ public class Cash {
         distances = new ConcurrentHashMap<>();
         writerIn = new FileWriter("cash_add_log.csv");
         writerOut = new FileWriter("cash_peek_log.csv");
+        writerRemove = new FileWriter("cash_remove_log.csv");
     }
 
     public synchronized boolean has(Location location) {
@@ -69,15 +70,17 @@ public class Cash {
 
     public void exit() {
         try {
-            writerIn.flush();
-            writerOut.flush();
             writerIn.close();
             writerOut.close();
+            writerRemove.close();
         } catch (IOException ignored) {}
     }
 
-    public int size() {
+    public int numOfLocations() {
         return images.size();
+    }
+    public int numOfImages() {
+        return images.values().stream().map(Map::size).reduce(0, Integer::sum);
     }
 
     public boolean isEmpty() {

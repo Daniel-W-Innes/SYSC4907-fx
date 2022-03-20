@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.*;
 
+//45.324428, -75.718196 160
 public class Application extends javafx.application.Application {
     private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private final Car car;
@@ -28,6 +29,7 @@ public class Application extends javafx.application.Application {
     private final Predictor predictor;
     private final Downloader downloader;
     private final Cash cash;
+    private final boolean testingMode;
 
 
     private Dialog<Car> getCar(){
@@ -63,7 +65,7 @@ public class Application extends javafx.application.Application {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == confirm) {
                 try {
-                    return new Car(Double.parseDouble(latitude.getText()),Double.parseDouble(longitude.getText()),Integer.parseInt(angle.getText()));
+                    return new Car(new Location(Double.parseDouble(latitude.getText()),Double.parseDouble(longitude.getText())),Integer.parseInt(angle.getText()));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -75,11 +77,18 @@ public class Application extends javafx.application.Application {
     }
 
     public Application() throws Exception {
-        Optional<Car> result = getCar().showAndWait();
-        if (result.isPresent()){
-            car = result.get();
+        String apiKey = System.getenv("API_KEY");
+        boolean debug = Boolean.parseBoolean(System.getenv("DEBUG"));
+        testingMode = Boolean.parseBoolean(System.getenv("TESTING"));
+        if (testingMode){
+            car = new Car(new Location(45.324428, -75.718196),160);
         }else {
-            throw new Exception("Missing dialogue");
+            Optional<Car> result = getCar().showAndWait();
+            if (result.isPresent()){
+                car = result.get();
+            }else {
+                throw new Exception("Missing dialogue");
+            }
         }
 
         StackPane pane = new StackPane();
@@ -92,12 +101,10 @@ public class Application extends javafx.application.Application {
         pane.setAlignment(Pos.TOP_CENTER);
         scene = new Scene(pane);
 
-        String apiKey = System.getenv("API_KEY");
-        boolean debug = Boolean.parseBoolean(System.getenv("DEBUG"));
         TransferQueue<DownloadRequest> requests = new LinkedTransferQueue<>();
         cash = new Cash(car);
-        predictor = new Predictor(car, apiKey, requests);
-        downloader = debug ? new Downloader(apiKey, requests, cash, 10) : new Downloader(apiKey, requests, cash);
+        predictor = new Predictor(car, apiKey, requests, testingMode);
+        downloader = debug ? new Downloader(apiKey, requests, cash, 10, testingMode) : new Downloader(apiKey, requests, cash, testingMode);
         predictor.run();
         new Thread(downloader).start();
     }
@@ -137,7 +144,12 @@ public class Application extends javafx.application.Application {
     }
 
     private void updateImage() {
-        cash.peek().ifPresent(imageView::setImage);
-        text.setText(car.toString());
+        if (!testingMode){
+            cash.peek().ifPresent(imageView::setImage);
+        }
+        String s = car.toString();
+        if (s != null){
+            text.setText(car.toString());
+        }
     }
 }
