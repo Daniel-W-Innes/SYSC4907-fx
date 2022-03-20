@@ -31,7 +31,7 @@ public class Car {
         executorService.scheduleAtFixedRate(this::update, 0, 1, TimeUnit.MILLISECONDS);
         executorService.scheduleAtFixedRate(()-> {
             try {
-                writer.write(getLatLong()  "\n");
+                writer.write(getLatLong()+  "\n");
             } catch (IOException ignored) {}
         }, 0, 1, TimeUnit.SECONDS);
     }
